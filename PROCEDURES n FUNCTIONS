@@ -1,0 +1,542 @@
+-------PROC W/O ANY PARAMETER----------
+
+CREATE OR REPLACE PROCEDURE PROC_EMP
+--(E_ID IN NUMBER, V_SAL OUT NUMBER) 
+AS
+ V_SAL NUMBER;
+BEGIN
+SELECT SAL INTO V_SAL FROM EMP WHERE EMPNO IN (100);
+DBMS_OUTPUT.PUT_LINE(V_SAL);
+END;
+/
+
+EXEC PROC_EMP;
+
+
+---------WITH IN/OUT PROC-------
+
+--IN SUCH A CASE WOUDL NEED ANONYMOUS BLOCK OR EXECUTION
+
+CREATE OR REPLACE PROCEDURE PROC_EMP_IO
+(E_ID IN NUMBER, V_SAL OUT NUMBER) 
+AS
+BEGIN
+SELECT SAL INTO V_SAL FROM EMP WHERE EMPNO = E_ID;
+--DBMS_OUTPUT.PUT_LINE(V_SAL);
+END;
+/
+
+--ANONYMOUS BLOCK EXCEUTUION WOULD B USED ONLY IN CASE THERE IS ONE VALUE TO BE RETRIEVED OR RETURNED----
+-------OR ELSE WE ARE USIGN ANY RECORD AS IN FUNCTION--------AS IN LINE 209----
+--OR HAVIGN OUT PARAMETER ALSO WITH IN PARAMETER-----------LIKE TAHT AT LINE 18
+
+DECLARE
+V_SAL NUMBER;
+V_ID NUMBER:=100;
+BEGIN
+SELECT SAL INTO V_SAL FROM EMP WHERE EMPNO=V_ID;
+DBMS_OUTPUT.PUT_LINE(V_SAL);
+END;
+/
+
+
+---------WITH IN/OUT PROC GETTING MULTIPLE OUTPUT NEED LOOP-------
+
+--IN SUCH A CASE WOUDL NEED ANONYMOUS BLOCK OR EXECUTION
+
+SELECT * FROM EMP;
+
+CREATE OR REPLACE PROCEDURE PROC_EMP_INP_OUT_MULTI_VAL
+(
+DEPT_NO IN NUMBER
+) 
+AS
+BEGIN
+FOR I IN (
+SELECT EMPNO, SAL, JOB_ID FROM EMP WHERE DEPTNO = DEPT_NO--IN (10,20,30,40)
+) LOOP
+DBMS_OUTPUT.PUT_LINE(EMPNO - ||I.EMPNO|| ||SALARY - ||I.SAL|| ||JOB_ID - ||I.JOB_ID);
+END LOOP;
+END;
+/
+
+--ANONYMOUS BLOCK
+
+
+EXEC PROC_EMP_INP_OUT_MULTI_VAL(10,20);
+
+/*
+FOR I IN (
+SELECT SAL INTO V_SAL FROM EMP WHERE EMPNO IN (100))
+LOOP
+DBMS_OUTPUT.PUT_LINE(V_SAL(I));
+END LOOP;
+*/
+
+SET SERVEROUTPUT ON;
+
+
+		View				Purpose
+USER_DEPENDENCIES		What objects a procedure uses
+DBA_DEPENDENCIES		Cross-schema dependency
+USER_SOURCE				Actual SQL inside procedure
+USER_OBJECTS			Status & timestamps
+ALL_DEPENDENCIES		Objects you have access to
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+CREATE OR REPLACE PROCEDURE PROC_EMP (E_ID IN NUMBER)
+AS
+    V_ENAME VARCHAR2(50);
+    V_CELL VARCHAR2(30);
+    
+    -- DECLARE CUSTOM EXCEPTION
+    employee_not_found_exception EXCEPTION;
+    PRAGMA EXCEPTION_INIT(employee_not_found_exception, -20001);
+    
+       duplicate_values EXCEPTION;
+    
+    v_emp_count NUMBER;
+BEGIN
+    -- 1. Check if employee exists using COUNT
+    SELECT COUNT(*)
+    INTO v_emp_count
+    FROM EMPLOYEES 
+    WHERE EMPLOYEE_ID = E_ID;
+    
+    -- 2. RAISE custom exception if not found
+    IF v_emp_count = 0 THEN
+        RAISE employee_not_found_exception;
+    END IF;
+    
+      IF v_emp_count > 1 THEN
+        RAISE duplicate_values;
+    END IF;
+    
+    -- 3. Fetch employee details
+    SELECT FIRST_NAME||' '||LAST_NAME, PHONE_NUMBER 
+    INTO V_ENAME, V_CELL 
+    FROM EMPLOYEES 
+    WHERE EMPLOYEE_ID = E_ID;
+    
+    -- 4. Process/display data
+    DBMS_OUTPUT.PUT_LINE('Employee: ' || V_ENAME);
+    DBMS_OUTPUT.PUT_LINE('Phone: ' || V_CELL);
+    
+EXCEPTION
+    -- 5. HANDLE custom exception
+    WHEN employee_not_found_exception THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Employee with ID ' || E_ID || ' not found');
+    
+        WHEN duplicate_values THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Duplicate values found');
+    
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Unexpected error: ' || SQLERRM);
+END;
+/
+
+execute PROC_EMP(10);
+
+DELETE FROM EMPLOYEES WHERE ROWID NOT IN (SELECT MAX(ROWID) FROM EMPLOYEES GROUP BY EMPLOYEE_ID)
+AND EMPLOYEE_ID=101;
+
+
+-----------------------------------------------------------FUNCTIONS---------------------------------------------
+
+A FUNCTION is a named PL/SQL block that:
+
+Returns a single value (mandatory)
+Can accept zero or more parameters (optional)
+Can be called from SQL statements and PL/SQL blocks
+Performs calculations or transformations
+Should ideally be free of side effects (no DML in pure functions)
+
+👉 Functions can be called directly in SELECT, WHERE, and other SQL clauses:
+👉 Functions can be used for Data Validation and Transformation
+👉 Functions can be used in check constraints and triggers
+
+
+👉 Being used for deoing calculations or transformations
+
+
+CREATE OR REPLACE FUNCTION calc_bonus(p_salary NUMBER)
+RETURN NUMBER IS
+BEGIN
+    RETURN p_salary * 0.10;
+END;
+/
+-- View bonuses in query:
+SELECT E.*, calc_bonus(SAL) FROM EMP E;
+
+DECLARE
+V_BONUS NUMBER;
+BEGIN
+V_BONUS:= calc_bonus(10000);
+DBMS_OUTPUT.PUT_LINE(V_BONUS);
+END;
+/
+
+CREATE OR REPLACE FUNCTION FUNC_EMP (EID IN NUMBER)
+RETURN VARCHAR
+AS
+V_NAME EMP.ENAME%TYPE;
+BEGIN
+SELECT ENAME INTO V_NAME FROM EMP WHERE EMPNO=EID;
+RETURN V_NAME;
+END;
+/
+
+DECLARE
+V_NAME EMP.ENAME%TYPE;
+BEGIN
+V_NAME:= FUNC_EMP(101);
+DBMS_OUTPUT.PUT_LINE(V_NAME);
+END;
+/
+
+SELECT ENAME, SAL, MGR_ID, DEPTNO 
+FROM EMP 
+WHERE ENAME = FUNC_EMP(101); 
+/
+--For only that particuar empno
+SELECT FUNC_EMP(101) FROM DUAL;
+/
+-- For table data:
+SELECT EMPNO, FUNC_EMP(EMPNO) AS emp_name FROM EMP;
+SELECT FUNC_EMP(EMPNO) AS ENAME, SAL, MGR_ID, DEPTNO, EMPNO FROM EMP;
+/
+----------------------------FOR GETTING MULTIPLE VALUE THROUGH ANY FUCNTION USING RECORD--------------------------
+
+CREATE OR REPLACE FUNCTION FUNC_EMP_REC (EID IN NUMBER)
+RETURN EMP%ROWTYPE
+AS
+V_REC EMP%ROWTYPE;
+BEGIN
+SELECT * INTO V_REC FROM EMP WHERE EMPNO=EID;
+RETURN V_REC;
+END;
+/
+ 
+DECLARE
+V_EMP EMP%ROWTYPE;
+BEGIN
+V_EMP := FUNC_EMP_REC(101);
+DBMS_OUTPUT.PUT_LINE(V_EMP.EMPNO||' '||V_EMP.ENAME||' '||V_EMP.SAL||' '||V_EMP.DEPTNO);
+END;
+/
+
+
+👉 Functions can be used for Data Validation and Transformation
+
+-----LIKEWISE...........
+
+CREATE OR REPLACE FUNCTION get_employee_grade(p_salary NUMBER)
+RETURN VARCHAR2 IS
+BEGIN
+    IF p_salary > 10000 THEN RETURN 'A';
+    ELSIF p_salary > 7000 THEN RETURN 'B';
+    ELSIF p_salary > 5000 THEN RETURN 'C';
+    ELSE RETURN 'D';
+    END IF;
+END;
+/
+
+-- Use in queries:
+SELECT ename, sal, get_employee_grade(sal) AS grade
+FROM emp
+WHERE get_employee_grade(sal) = 'A';
+
+
+Quick Reference:
+Method																	Syntax												Use Case
+SELECT											SELECT FUNC_EMP(101) FROM DUAL;				Quick testing, reporting
+PL/SQL Block										v_var := FUNC_EMP(101);								Within procedures/blocks
+EXEC																												 	SQL*Plus command line
+													VARIABLE E_NAME VARCHAR2(50);
+													EXEC :E_NAME := FUNC_EMP(101);
+															PRINT E_NAME;			
+Direct output								DBMS_OUTPUT.PUT_LINE(FUNC_EMP(101));			Quick display
+In queries							SELECT * FROM emp WHERE ename=FUNC_EMP(101);		Filtering data
+										SELECT E.*, get_employee_grade(SAL) FROM EMP E;
+										
+
+DECLARE
+    v_result VARCHAR2(50);
+BEGIN
+    v_result := FUNC_EMP(101);
+    DBMS_OUTPUT.PUT_LINE('Result: ' || v_result);
+END;
+/										
+
+---------------------DATA BASE TRIGGERS AND CONSTARINST---------------------
+
+CREATE OR REPLACE FUNCTION SAL_RANGE(SAL IN NUMBER)
+RETURN NUMBER IS
+BEGIN
+    IF SAL BETWEEN 18000 AND 30000 THEN
+        RETURN 2;
+    ELSIF SAL BETWEEN 9000 AND 18000 THEN
+        RETURN 1;
+    ELSE 
+        RETURN 0;
+    END IF;
+END;
+/
+
+SELECT EMPNO, SAL, SAL_RANGE(SAL) AS RANGE FROM EMP;
+
+DECLARE
+    V_GRADE NUMBER;
+BEGIN
+    V_GRADE := SAL_RANGE(20000);
+    DBMS_OUTPUT.PUT_LINE('Salary Grade: ' || V_GRADE);
+END;
+/
+
+
+
+
+CREATE OR REPLACE FUNCTION FUNC_EMP (EID IN NUMBER)
+RETURN VARCHAR2
+AS
+V_NAME EMP.ENAME%TYPE;
+V_COUNT NUMBER;
+
+NO_DATA EXCEPTION; 
+DUP_ROWS EXCEPTION;
+BEGIN
+SELECT COUNT(EID) INTO V_COUNT FROM EMP WHERE EMPNO=EID;
+
+    IF V_COUNT = 0 THEN
+    RAISE NO_DATA;
+    ELSIF V_COUNT > 1 THEN
+    RAISE DUP_ROWS;
+    END IF;
+
+SELECT ENAME INTO V_NAME FROM EMP WHERE EMPNO=EID;
+RETURN V_NAME;
+
+EXCEPTION
+WHEN NO_DATA THEN
+RETURN 'NO RECORDS AVAILABEL';
+WHEN DUP_ROWS THEN
+RETURN 'DUPLICATE EMPNO';
+END;
+/
+
+
+
+----------------------
+
+
+✅ WAY 3: Function returning COLLECTION (Multiple rows)
+
+Used when returning many rows
+
+CREATE OR REPLACE TYPE EMP_TAB AS TABLE OF EMP_OBJ;
+/
+
+CREATE OR REPLACE FUNCTION FUNC_EMP_LIST
+RETURN EMP_TAB PIPELINED
+AS
+BEGIN
+  FOR R IN (SELECT SAL, MGR, DEPTNO FROM EMP) LOOP
+    PIPE ROW (EMP_OBJ(R.SAL, R.MGR, R.DEPTNO));
+  END LOOP;
+END;
+/
+
+
+✅ WAY 1: Function returning an OBJECT (Most common answer)
+One return → many columns inside
+CREATE OR REPLACE TYPE EMP_OBJ AS OBJECT (
+  SAL     NUMBER,
+  MGR     NUMBER,
+  DEPTNO  NUMBER
+);
+/
+
+CREATE OR REPLACE FUNCTION FUNC_EMP (
+  P_EMPNO NUMBER
+)
+RETURN EMP_OBJ
+AS
+  V_OBJ EMP_OBJ;
+BEGIN
+  SELECT EMP_OBJ(SAL, MGR, DEPTNO)
+  INTO   V_OBJ
+  FROM   EMP
+  WHERE  EMPNO = P_EMPNO;
+
+  RETURN V_OBJ;
+END;
+/
+
+Use it
+SELECT FUNC_EMP(7369).SAL,
+       FUNC_EMP(7369).MGR,
+       FUNC_EMP(7369).DEPTNO
+FROM DUAL;
+
+✅ WAY 2----------------------------FOR GETTING MULTIPLE VALUE THROUGH ANY FUCNTION USING RECORD--------------------------
+
+CREATE OR REPLACE FUNCTION FUNC_EMP_REC (EID IN NUMBER)
+RETURN EMP%ROWTYPE
+AS
+V_REC EMP%ROWTYPE;
+BEGIN
+SELECT * INTO V_REC FROM EMP WHERE EMPNO=EID;
+RETURN V_REC;
+END;
+/
+ 
+DECLARE
+V_EMP EMP%ROWTYPE;
+BEGIN
+V_EMP := FUNC_EMP_REC(101);
+DBMS_OUTPUT.PUT_LINE(V_EMP.EMPNO||' '||V_EMP.ENAME||' '||V_EMP.SAL||' '||V_EMP.DEPTNO);
+END;
+/
+
+
+
+These four procedures are the core steps in Oracle’s online table redefinition process. They’re used in sequence to restructure a table (for example, converting it into a partitioned table, moving it to a new tablespace, or changing its column definitions) while keeping the table online for queries and DML.
+
+🔧 When to Use Each Procedure
+DBMS_REDEFINITION.START_REDEF_TABLE
+
+When: At the beginning of the redefinition process.
+
+Purpose: Starts copying data from the original table into the interim table (the one with the new structure).
+
+Use case: You’ve created an interim table with the desired structure and now want to begin the redefinition.
+
+DBMS_REDEFINITION.COPY_TABLE_DEPENDENTS
+
+When: After starting redefinition, before finishing.
+
+Purpose: Copies dependent objects (indexes, triggers, constraints, grants, privileges) from the original table to the interim table.
+
+Use case: Ensures the new table has all the same supporting objects as the old one.
+
+DBMS_REDEFINITION.SYNC_INTERIM_TABLE
+
+When: During the redefinition process, especially if the original table is still being updated by users.
+
+Purpose: Synchronizes changes (DML operations like INSERT, UPDATE, DELETE) made to the original table into the interim table.
+
+Use case: Keeps the interim table up to date with the original while redefinition is ongoing.
+
+DBMS_REDEFINITION.FINISH_REDEF_TABLE
+
+When: At the end of the redefinition process.
+
+Purpose: Completes the redefinition, swaps the interim table in place of the original, and makes it the active table.
+
+Use case: Final step — after this, the interim table becomes the new definition of the original table.
+
+📌 Typical Workflow
+Create interim table with new structure.
+
+Call START_REDEF_TABLE.
+
+Call COPY_TABLE_DEPENDENTS.
+
+Optionally call SYNC_INTERIM_TABLE multiple times if DML is ongoing.
+
+Call FINISH_REDEF_TABLE to complete the process.
+
+👉 In short:
+
+Start → begin redefinition.
+
+Copy dependents → bring over indexes/triggers/constraints.
+
+Sync → keep interim table current with ongoing changes.
+
+Finish → finalize and swap in the new structure.
+
+*/
+
+👉 In short: these four procedures are used whenever you want to redefine an existing table online — whether that means partitioning it, changing its structure, or moving it. They are not only for creating a new partitioned base table, but for any structural transformation of an existing table without downtime.
+
+👉 In short: structural transformation means changing the table’s definition (partitioning, storage, columns, etc.), but Oracle allows DML during the process. That’s the whole advantage of online redefinition — you don’t need downtime.
+
+✅ Step-by-Step Correct Flow
+1️⃣    Start Redefinition
+BEGIN
+  DBMS_REDEFINITION.start_redef_table(
+    uname      => HR,
+    orig_table => EMP,
+    int_table  => EMP_PART
+  );
+END;
+/
+
+2️⃣     ⭐ Copy ALL Dependent Objects (CRITICAL)
+BEGIN
+  DBMS_REDEFINITION.copy_table_dependents(
+    uname            => HR,
+    orig_table       => EMP,
+    int_table        => EMP_PART,
+    copy_indexes     => DBMS_REDEFINITION.CONS_ORIG_PARAMS,
+    copy_triggers    => TRUE,
+    copy_constraints => TRUE,
+    copy_privileges  => TRUE
+  );
+END;
+/
+
+📌 This copies:
+
+✔ Primary / Foreign / Unique constraints
+✔ Triggers
+✔ Indexes
+✔ Grants
+
+3️⃣      (Optional but Recommended) Sync Interim Table
+
+If DML is happening:
+
+BEGIN
+  DBMS_REDEFINITION.sync_interim_table(
+    uname      => HR,
+    orig_table => EMP,
+    int_table  => EMP_PART
+  );
+END;
+/
+
+4️⃣     Finish Redefinition (Swap Happens Here)
+BEGIN
+  DBMS_REDEFINITION.finish_redef_table(
+    uname      => HR,
+    orig_table => EMP,
+    int_table  => EMP_PART
+  );
+END;
+/
+
+
+👉 At this point:
+
+EMP = partitioned table
+
+All constraints & triggers are back on EMP
+
+Interim table is dropped automatically
+
+🔍 How to Verify Nothing Is Missing
+Constraints
+SELECT constraint_name, constraint_type
+FROM user_constraints
+WHERE table_name = EMP;
+
+Triggers
+SELECT trigger_name, status
+FROM user_triggers
+WHERE table_name = EMP;
+

@@ -1,0 +1,185 @@
+🔥 ORACLE PERFORMANCE TUNING – COMPLETE TOPIC LIST
+
+1 - SQL PERFORMANCE TUNING (MOST IMPORTANT)
+-------------------------------------------------------------
+🔹 Query Optimization
+Using proper JOINs instead of subqueries
+Correlated vs Non-correlated subqueries
+EXISTS vs IN vs JOIN
+Avoiding SELECT *
+Proper use of WHERE clause (filter early)
+
+🔹 Execution Plan Analysis
+------------------------------
+EXPLAIN PLAN
+DBMS_XPLAN.DISPLAY
+Cost, cardinality, access paths
+Full table scan vs index scan
+
+🔹 Indexing Strategies
+---------------------------
+B-Tree vs Bitmap indexes
+Composite indexes & column order
+Function-based indexes
+Invisible indexes
+Index vs Partition pruning
+
+🔹 Statistics
+-----------------
+Table / Index / Column statistics
+DBMS_STATS.GATHER_TABLE_STATS
+Histograms (frequency, height-balanced)
+Stale statistics issues
+
+2 - PARTITIONING (BIG PERFORMANCE BOOST)
+-----------------------------------------------------
+Range / List / Hash / Composite partitioning
+Partition pruning
+Local vs Global indexes
+Partition-wise joins
+Interval partitioning
+
+
+3 - PL/SQL PERFORMANCE TUNING
+-----------------------------------------
+🔹 Context Switch Reduction
+----------------------------------
+BULK COLLECT
+FORALL
+Avoid row-by-row processing (RBAR)
+
+🔹 Collections
+-----------------
+Associative arrays
+Nested tables
+VARRAYs
+Collections vs Global Temporary Tables
+
+🔹 Cursor Optimization
+--------------------------
+Explicit vs Implicit cursors
+Cursor FOR loops
+%ROWTYPE vs individual variables
+Weak vs Strong ref cursors
+
+4 - MEMORY & SHARED POOL TUNING
+--------------------------------------------
+Hard parse vs Soft parse
+Bind variables usage
+Cursor sharing
+Library cache issues
+
+5 - MATERIALIZED VIEWS & CACHING
+-------------------------------------------
+Query rewrite
+FAST vs COMPLETE refresh
+ON DEMAND vs ON COMMIT refresh
+MV logs tuning
+
+6 - DML PERFORMANCE
+-------------------------------
+Direct path insert (APPEND)
+Parallel DML
+Redo & Undo tuning
+Commit frequency optimization
+
+7 - LOCKING & CONCURRENCY
+-----------------------------------
+Row-level vs table-level locks
+Deadlocks
+SELECT FOR UPDATE
+Enqueue waits
+
+8 - TEMP & SORT PERFORMANCE
+----------------------------------------
+Sorting in memory vs disk
+TEMP tablespace usage
+Hash joins vs sort merge joins
+
+9 - PARALLELISM
+--------------------
+Parallel query
+Parallel DML
+Degree of parallelism (DOP)
+When NOT to use parallelism
+
+🔟 MONITORING & TROUBLESHOOTING
+-----------------------------------------------
+AWR / ASH reports
+SQL Trace (10046)
+TKPROF
+Wait events analysis
+
+🎯 INTERVIEW-FRIENDLY ANSWER
+
+“I focused on SQL tuning using execution plans, proper indexing, statistics, and partitioning.
+On the PL/SQL side, I optimize by reducing context switches using BULK COLLECT and FORALL, and by avoiding row-by-row processing.”
+
+🧠 Real Project Examples Interviewers Love
+Replaced cursor loop with FORALL/GTT → 70% improvement
+Added composite index after analyzing execution plan
+Enabled partition pruning → query reduced from minutes to seconds
+Fixed hard parsing using bind variables
+
+---------------------------------------------------------------------------------------
+
+
+🔥 TO
+P 10 ORACLE PERFORMANCE TUNING INTERVIEW QUESTIONS
+1 - How do you start tuning a slow SQL query?
+Answer:
+“I first check the execution plan using DBMS_XPLAN, identify the access path, joins, and cost, then tune indexes, rewrite SQL, or update statistics.”
+
+2 - Difference between Full Table Scan and Index Scan?
+Answer:
+“FTS is better for large data retrieval, while index scan is efficient for selective queries. Optimizer chooses based on cost.”
+
+3 - What is partition pruning?
+Answer:
+“Partition pruning allows Oracle to scan only required partitions instead of the whole table, improving query performance.”
+
+4 - How do bind variables improve performance?
+Answer:
+“Bind variables reduce hard parsing by allowing SQL reuse, improving shared pool efficiency.”
+
+5 - How do you tune PL/SQL code?
+Answer:
+“By avoiding row-by-row processing and using BULK COLLECT and FORALL to reduce SQL–PL/SQL context switches.”
+
+6 - When would you use a bitmap index?
+Answer:
+“For low-cardinality columns in read-heavy environments like data warehouses.”
+
+7 - What is the difference between ONLINE and OFFLINE tuning?
+Answer:
+“Online tuning avoids downtime using features like DBMS_REDEFINITION, while offline tuning requires maintenance windows.”
+
+8 - What causes hard parsing?
+Answer:
+“Lack of bind variables, dynamic SQL, and frequent literal SQL variations cause hard parsing.”
+
+9 - How do statistics affect performance?
+Answer:
+“Optimizer relies on statistics for accurate cardinality estimates. Stale or missing stats lead to poor execution plans.”
+
+🔟 What real tuning have you done in projects?
+Answer (Sample):
+“I analyzed a slow report query, found missing composite index, added it after checking plan, and reduced runtime from minutes to seconds.”
+
+
+------------------------------------------------------------------------------------
+
+HINITS - https://www.complexsql.com/types-of-oracle-hints-oracle-hints-examples/
+		https://docs.oracle.com/cd/E15586_01/server.1111/e16638/hintsref.htm
+		
+WAIT EVENTS - https://docs.oracle.com/en/database/oracle/oracle-database/19/refrn/descriptions-of-wait-events.html#GUID-8CD6C645-00C0-4936-84C4-D5540801515D
+			https://learn.microsoft.com/en-us/troubleshoot/sql/database-engine/performance/troubleshoot-slow-running-queries
+			
+			https://www.google.com/search?q=troubleshooting+long+running+queries+in+oracle&sca_esv=0c1395bd2e2481ba&sxsrf=AHTn8zpGSHoJU6oANeBfyUsOVZziENmFjQ%3A1744143223180&ei=d4P1Z5HkCvea4-EPyqi0iQs&oq=troubleshooting+long+runnig&gs_lp=Egxnd3Mtd2l6LXNlcnAiG3Ryb3VibGVzaG9vdGluZyBsb25nIHJ1bm5pZyoCCAAyBxAAGIAEGA0yBxAAGIAEGA0yBxAAGIAEGA0yBhAAGBYYHjILEAAYgAQYhgMYigUyCxAAGIAEGIYDGIoFMgsQABiABBiGAxiKBTIIEAAYogQYiQUyCBAAGKIEGIkFSNRKUABY4ThwAXgBkAEBmAHOAqAB9SWqAQgwLjIyLjUuMbgBAcgBAPgBAZgCHKACqibCAgQQIxgnwgIKECMYgAQYJxiKBcICChAAGIAEGEMYigXCAgsQABiABBiRAhiKBcICDRAuGIAEGEMY5QQYigXCAgoQLhiABBhDGIoFwgIIEAAYgAQYsQPCAg4QLhiABBixAxiDARjUAsICDhAuGIAEGLEDGIMBGIoFwgILEAAYgAQYsQMYgwHCAg0QABiABBixAxhDGIoFwgIFEAAYgATCAg0QLhiABBixAxhDGIoFwgIIEC4YgAQYsQPCAg0QABiABBixAxhGGPkBwgInEAAYgAQYsQMYRhj5ARiXBRiMBRjdBBhGGPkBGPQDGPUDGPYD2AEBwgILEC4YgAQYkQIYigXCAgoQABiABBgUGIcCwgIaEC4YgAQYkQIYigUYlwUY3AQY3gQY4ATYAQHCAgUQABjvBZgDALoGBggBEAEYE5IHBjEuMjEuNqAHv6ICsgcGMC4yMS42uAeIJg&sclient=gws-wiz-serp
+			
+INDEXES - https://www.google.com/search?q=indexes+in+oracle+database&sca_esv=0c1395bd2e2481ba&sxsrf=AHTn8zoZRcUSBGdQgydiMAowTm5AtctnOw%3A1744143290141&ei=uoP1Z-ysCKWR4-EPsZimkQQ&oq=INDEXES+&gs_lp=Egxnd3Mtd2l6LXNlcnAiCElOREVYRVMgKgIIAjILEAAYgAQYkQIYigUyCBAAGIAEGLEDMgsQABiABBiRAhiKBTIFEAAYgAQyBRAAGIAEMgUQABiABDIFEAAYgAQyBRAAGIAEMgUQABiABDIKEAAYgAQYFBiHAkjpG1AAWJwNcAB4AZABAJgBsAGgAZsKqgEDMC44uAEByAEA-AEBmAIIoAKXC8ICBBAjGCfCAgoQIxiABBgnGIoFwgIKEAAYgAQYQxiKBcICCxAAGIAEGLEDGIMBwgIOEC4YgAQYsQMYgwEYigXCAhMQLhiABBixAxjRAxhDGMcBGIoFwgIQEAAYgAQYsQMYQxiDARiKBcICDRAAGIAEGLEDGEMYigXCAhAQABiABBixAxgUGIcCGMkDwgINEAAYgAQYkgMYFBiHAsICDhAAGIAEGLEDGIMBGIoFwgIOEAAYgAQYkQIYsQMYigWYAwCSBwMwLjigB7g9sgcDMC44uAeXCw&sclient=gws-wiz-serp
+
+INDEXES
+https://bhupeshpadiyar.medium.com/oracle-indexes-and-types-of-indexes-in-oracle-with-example-3c407727a943
+
+PARTITIONS - 			
