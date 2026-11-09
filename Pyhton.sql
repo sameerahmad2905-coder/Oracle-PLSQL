@@ -1,0 +1,2 @@
+https://www.apnacollege.in/course/prime-ai
+select 
